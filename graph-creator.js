@@ -9,12 +9,13 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     appendElSpec: "#graph"
   };
   // define graphcreator object
-  var GraphCreator = function(svg, nodes, edges){
+  var GraphCreator = function(svg, nodes, edges, opacity){
     var thisGraph = this;
         thisGraph.idct = 0;
 
     thisGraph.nodes = nodes || [];
     thisGraph.edges = edges || [];
+    thisGraph.opacity = opacity || [];
 
     thisGraph.state = {
       selectedNode: null,
@@ -119,7 +120,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     d3.select("#download-input").on("click", function(){
       var saveEdges = [];
       thisGraph.edges.forEach(function(val, i){
-        saveEdges.push({source: val.source.id, target: val.target.id});
+        saveEdges.push({source: val.source.id, target: val.target.id, opacity: val.opacity});
       });
       var blob = new Blob([window.JSON.stringify({"nodes": thisGraph.nodes, "edges": saveEdges})], {type: "text/plain;charset=utf-8"});
       saveAs(blob, "mydag.json");
@@ -146,7 +147,8 @@ document.onload = (function(d3, saveAs, Blob, undefined){
             var newEdges = jsonObj.edges;
             newEdges.forEach(function(e, i){
               newEdges[i] = {source: thisGraph.nodes.filter(function(n){return n.id == e.source;})[0],
-                          target: thisGraph.nodes.filter(function(n){return n.id == e.target;})[0]};
+                          target: thisGraph.nodes.filter(function(n){return n.id == e.target;})[0],
+                          opacity: e.opacity};
             });
             thisGraph.edges = newEdges;
             thisGraph.updateGraph();
@@ -207,6 +209,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     if(doDelete){
       thisGraph.nodes = [];
       thisGraph.edges = [];
+      thisGraph.opacity = [];
       thisGraph.updateGraph();
     }
   };
@@ -495,6 +498,9 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     var paths = thisGraph.paths;
     // update existing paths
     paths.style('marker-end', 'url(#end-arrow)')
+      .style('opacity', function(d){
+	return d.opacity;
+      })
       .classed(consts.selectedClass, function(d){
         return d === state.selectedEdge;
       })
@@ -506,6 +512,9 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     paths.enter()
       .append("path")
       .style('marker-end','url(#end-arrow)')
+      .style('opacity', function(d){
+	return d.opacity
+      })
       .classed("link", true)
       .attr("d", function(d){
         return "M" + d.source.x + "," + d.source.y + "L" + d.target.x + "," + d.target.y;
@@ -593,13 +602,14 @@ document.onload = (function(d3, saveAs, Blob, undefined){
   // initial node data
   var nodes = [];
   var edges = [];
+  var opacity = [];
 
 
   /** MAIN SVG **/
   var svg = d3.select(settings.appendElSpec).append("svg")
         .attr("width", width)
         .attr("height", height);
-  var graph = new GraphCreator(svg, nodes, edges);
+  var graph = new GraphCreator(svg, nodes, edges, opacity);
       graph.setIdCt(2);
   graph.updateGraph();
 })(window.d3, window.saveAs, window.Blob);
