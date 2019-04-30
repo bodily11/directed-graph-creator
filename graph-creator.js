@@ -491,8 +491,9 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     var thisGraph = this,
         consts = thisGraph.consts,
         state = thisGraph.state;
-
+    
     thisGraph.paths = thisGraph.paths.data(thisGraph.edges, function(d){
+      // build a dictionary of nodes that are linked
       return String(d.source.id) + "+" + String(d.target.id);
     });
     var paths = thisGraph.paths;
@@ -526,9 +527,11 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       .on("mouseup", function(d){
         state.mouseDownLink = null;
       });
-
-    // remove old links
-    paths.exit().remove();
+    
+    var linkedByIndex = {};
+    thisGraph.edges.forEach(function(d){
+      linkedByIndex[d.source.id + "," + d.target.id] = 1;
+    })
 
     // update existing nodes
     thisGraph.circles = thisGraph.circles.data(thisGraph.nodes, function(d){ return d.id;});
@@ -554,8 +557,43 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       .on("mouseup", function(d){
         thisGraph.circleMouseUp.call(thisGraph, d3.select(this), d);
       })
+      .on("mouseover", fade(.01,false))
+      .on("mouseout", fade(1,true))
       .call(thisGraph.drag);
+        
+    // check the dictionary to see if nodes are linked
+    function isConnected(a, b) {
+        return linkedByIndex[String(a) + "," + String(b)] || linkedByIndex[String(b) + "," + String(a)] || String(a) == String(b);
+    }
+    // fade nodes on hover
+    function fade(opacity,fade_out_edge) {
+        return function(d) {
+            // check all other nodes to see if they're connected
+            // to this one. if so, keep the opacity at 1, otherwise
+            // fade
+          
+            newGs.style("stroke-opacity", function(o) {
+                var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
+                return thisOpacity;
+            });
+            newGs.style("fill-opacity", function(o) {
+                var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
+                return thisOpacity;
+            });
+            paths.style("opacity", function(o) {
+                return String(o.target.id) == String(d.id) || String(o.source.id) == String(d.id) ? o.opacity : opacity;
+            });
+            if (fade_out_edge == true){
+                paths.style("opacity", function(o) {
+                    return o.opacity;
+                })
+            };
+        };
+    }
 
+    // remove old links
+    paths.exit().remove();
+    
     newGs.append("circle")
       .attr("r", String(consts.nodeRadius));
 
@@ -580,8 +618,6 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     var y = window.innerHeight|| docEl.clientHeight|| bodyEl.clientHeight;
     svg.attr("width", x).attr("height", y);
   };
-
-
 
   /**** MAIN ****/
 
@@ -612,4 +648,8 @@ document.onload = (function(d3, saveAs, Blob, undefined){
   var graph = new GraphCreator(svg, nodes, edges, opacity);
       graph.setIdCt(2);
   graph.updateGraph();
+
+  
+
+
 })(window.d3, window.saveAs, window.Blob);
