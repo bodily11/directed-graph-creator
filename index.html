@@ -7,7 +7,15 @@
   <body>
     <div id="graph">
     <div id="toolbox">
-      <input type="file" id="hidden-file-upload"><input id="upload-input" type="image" title="upload graph" src="upload-icon.png" alt="upload graph"> <input type="image" id="download-input" title="download graph" src="download-icon.png" alt="download graph"> <input type="image" id="delete-graph" title="delete graph" src="trash-icon.png" alt="delete graph">
+      <input type="file" id="hidden-file-upload">
+      <input id="upload-input" type="image" title="upload graph" src="upload-icon.png" alt="upload graph">
+      <input type="image" id="download-input" title="download graph" src="download-icon.png" alt="download graph">
+      <input type="image" id="delete-graph" title="delete graph" src="trash-icon.png" alt="delete graph">
+      <div>Links</div>
+      <label style="display:block;clear:left"><input type="checkbox" id="outbound" name="edge_display_choice" value="outbound" checked/>Outbound</label>
+      <label style="display:block;clear:left"><input type="checkbox" id="inbound" name="edge_display_choice" value="inbound"/>Inbound</label>
+      <br>
+      <a href="current_data.json" download="network_graph.json" style="text-align:center;display:block;">Download file</a>
     </div>
     </div>
 

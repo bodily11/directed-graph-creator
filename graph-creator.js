@@ -491,7 +491,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     var thisGraph = this,
         consts = thisGraph.consts,
         state = thisGraph.state;
-    
+
     thisGraph.paths = thisGraph.paths.data(thisGraph.edges, function(d){
       // build a dictionary of nodes that are linked
       return String(d.source.id) + "+" + String(d.target.id);
@@ -527,7 +527,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       .on("mouseup", function(d){
         state.mouseDownLink = null;
       });
-    
+
     var linkedByIndex = {};
     thisGraph.edges.forEach(function(d){
       linkedByIndex[d.source.id + "," + d.target.id] = 1;
@@ -560,10 +560,19 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       .on("mouseover", fade(.01,false))
       .on("mouseout", fade(1,true))
       .call(thisGraph.drag);
-        
+
     // check the dictionary to see if nodes are linked
     function isConnected(a, b) {
-        return linkedByIndex[String(a) + "," + String(b)] || linkedByIndex[String(b) + "," + String(a)] || String(a) == String(b);
+        if (document.getElementById("outbound").checked == true && document.getElementById("inbound").checked == true){
+          return linkedByIndex[String(a) + "," + String(b)] || linkedByIndex[String(b) + "," + String(a)] || String(a) == String(b);
+        }else if(document.getElementById("outbound").checked == true){
+          return linkedByIndex[String(a) + "," + String(b)] || String(a) == String(b);
+        }else if(document.getElementById("inbound").checked == true){
+          return linkedByIndex[String(b) + "," + String(a)] || String(a) == String(b);
+        }else{
+          return String(a) == String(b);
+        }
+
     }
     // fade nodes on hover
     function fade(opacity,fade_out_edge) {
@@ -571,7 +580,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
             // check all other nodes to see if they're connected
             // to this one. if so, keep the opacity at 1, otherwise
             // fade
-          
+
             newGs.style("stroke-opacity", function(o) {
                 var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
                 return thisOpacity;
@@ -581,7 +590,15 @@ document.onload = (function(d3, saveAs, Blob, undefined){
                 return thisOpacity;
             });
             paths.style("opacity", function(o) {
-                return String(o.target.id) == String(d.id) || String(o.source.id) == String(d.id) ? o.opacity : opacity;
+                if (document.getElementById("outbound").checked == true && document.getElementById("inbound").checked == true){
+                  return String(o.source.id) == String(d.id) || String(o.target.id) == String(d.id) ? o.opacity : opacity;
+                }else if(document.getElementById("outbound").checked == true){
+                  return String(o.source.id) == String(d.id) ? o.opacity : opacity;
+                }else if(document.getElementById("inbound").checked == true){
+                  return String(o.target.id) == String(d.id) ? o.opacity : opacity;
+                } else {
+                    return 0;
+                }
             });
             if (fade_out_edge == true){
                 paths.style("opacity", function(o) {
@@ -593,7 +610,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
 
     // remove old links
     paths.exit().remove();
-    
+
     newGs.append("circle")
       .attr("r", String(consts.nodeRadius));
 
@@ -649,7 +666,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       graph.setIdCt(2);
   graph.updateGraph();
 
-  
+
 
 
 })(window.d3, window.saveAs, window.Blob);
