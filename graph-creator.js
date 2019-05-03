@@ -9,13 +9,12 @@ document.onload = (function(d3, saveAs, Blob, undefined){
     appendElSpec: "#graph"
   };
   // define graphcreator object
-  var GraphCreator = function(svg, nodes, edges, opacity){
+  var GraphCreator = function(svg, nodes, edges){
     var thisGraph = this;
         thisGraph.idct = 0;
 
     thisGraph.nodes = nodes || [];
     thisGraph.edges = edges || [];
-    thisGraph.opacity = opacity || [];
 
     thisGraph.state = {
       selectedNode: null,
@@ -493,14 +492,13 @@ document.onload = (function(d3, saveAs, Blob, undefined){
         state = thisGraph.state;
 
     thisGraph.paths = thisGraph.paths.data(thisGraph.edges, function(d){
-      // build a dictionary of nodes that are linked
       return String(d.source.id) + "+" + String(d.target.id);
     });
     var paths = thisGraph.paths;
     // update existing paths
     paths.style('marker-end', 'url(#end-arrow)')
       .style('opacity', function(d){
-	return d.opacity;
+	       return d.opacity;
       })
       .classed(consts.selectedClass, function(d){
         return d === state.selectedEdge;
@@ -514,7 +512,7 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       .append("path")
       .style('marker-end','url(#end-arrow)')
       .style('opacity', function(d){
-	return d.opacity
+	       return d.opacity
       })
       .classed("link", true)
       .attr("d", function(d){
@@ -561,6 +559,15 @@ document.onload = (function(d3, saveAs, Blob, undefined){
       .on("mouseout", fade(1,true))
       .call(thisGraph.drag);
 
+    var linkedByName = {};
+    thisGraph.nodes.forEach(function(d){
+        thisGraph.nodes.forEach(function(o){
+          if (String(d.title).slice(1) == String(o.title).slice(1) && String(d.id) != String(o.id)){
+            linkedByName[String(d.id)] = String(o.id);
+          }
+        })
+      })
+
     // check the dictionary to see if nodes are linked
     function isConnected(a, b) {
         if (document.getElementById("outbound").checked == true && document.getElementById("inbound").checked == true){
@@ -572,7 +579,6 @@ document.onload = (function(d3, saveAs, Blob, undefined){
         }else{
           return String(a) == String(b);
         }
-
     }
     // fade nodes on hover
     function fade(opacity,fade_out_edge) {
@@ -581,38 +587,74 @@ document.onload = (function(d3, saveAs, Blob, undefined){
             // to this one. if so, keep the opacity at 1, otherwise
             // fade
 
-            newGs.style("stroke-opacity", function(o) {
-                var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
-                return thisOpacity;
-            });
-            newGs.style("fill-opacity", function(o) {
-                var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
-                return thisOpacity;
-            });
-            paths.style("opacity", function(o) {
-                if (document.getElementById("outbound").checked == true && document.getElementById("inbound").checked == true){
-                  return String(o.source.id) == String(d.id) || String(o.target.id) == String(d.id) ? o.opacity : opacity;
-                }else if(document.getElementById("outbound").checked == true){
-                  return String(o.source.id) == String(d.id) ? o.opacity : opacity;
-                }else if(document.getElementById("inbound").checked == true){
-                  return String(o.target.id) == String(d.id) ? o.opacity : opacity;
-                } else {
-                    return 0;
-                }
-            });
-            if (fade_out_edge == true){
-                paths.style("opacity", function(o) {
-                    return o.opacity;
-                })
-            };
+            if (document.getElementById("mirror").checked == true){
+              newGs.style("stroke-opacity", function(o) {
+                  var thisOpacity = isConnected(String(d.id),String(o.id)) || isConnected(String(linkedByName[String(d.id)]),String(o.id)) ? 1 : opacity;
+                  return thisOpacity;
+              });
+              newGs.style("fill-opacity", function(o) {
+                  var thisOpacity = isConnected(String(d.id),String(o.id)) || isConnected(String(linkedByName[String(d.id)]),String(o.id)) ? 1 : opacity;
+                  return thisOpacity;
+              });
+              paths.style("opacity", function(o) {
+                  if (document.getElementById("outbound").checked == true && document.getElementById("inbound").checked == true){
+                    return String(o.source.id) == String(d.id) || String(o.target.id) == String(d.id) || String(o.source.id) == String(linkedByName[String(d.id)]) || String(o.target.id) == String(linkedByName[String(d.id)]) ? o.opacity : opacity;
+                  }else if(document.getElementById("outbound").checked == true){
+                    return String(o.source.id) == String(d.id) || String(o.source.id) == String(linkedByName[String(d.id)]) ? o.opacity : opacity;
+                  }else if(document.getElementById("inbound").checked == true){
+                    return String(o.target.id) == String(d.id) || String(o.target.id) == String(linkedByName[String(d.id)]) ? o.opacity : opacity;
+                  } else {
+                      return 0;
+                  }
+              });
+              if (fade_out_edge == true){
+                  paths.style("opacity", function(o) {
+                      return o.opacity;
+                  })
+              };
+
+
+            } else {
+              newGs.style("stroke-opacity", function(o) {
+                  var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
+                  return thisOpacity;
+              });
+              newGs.style("fill-opacity", function(o) {
+                  var thisOpacity = isConnected(String(d.id),String(o.id)) ? 1 : opacity;
+                  return thisOpacity;
+              });
+              paths.style("opacity", function(o) {
+                  if (document.getElementById("outbound").checked == true && document.getElementById("inbound").checked == true){
+                    return String(o.source.id) == String(d.id) || String(o.target.id) == String(d.id) ? o.opacity : opacity;
+                  }else if(document.getElementById("outbound").checked == true){
+                    return String(o.source.id) == String(d.id) ? o.opacity : opacity;
+                  }else if(document.getElementById("inbound").checked == true){
+                    return String(o.target.id) == String(d.id) ? o.opacity : opacity;
+                  } else {
+                      return 0;
+                  }
+              });
+              if (fade_out_edge == true){
+                  paths.style("opacity", function(o) {
+                      return o.opacity;
+                  })
+              };
+            }
         };
     }
 
     // remove old links
     paths.exit().remove();
 
+    var myColor = d3.scale.linear().domain([0,1])
+      .range(["white", "DeepSkyBlue"])
+
     newGs.append("circle")
-      .attr("r", String(consts.nodeRadius));
+      .attr("r", String(consts.nodeRadius))
+      .style("fill", function(d){
+        return myColor(d.time)
+      })
+    ;
 
     newGs.each(function(d){
       thisGraph.insertTitleLinebreaks(d3.select(this), d.title);
@@ -655,14 +697,12 @@ document.onload = (function(d3, saveAs, Blob, undefined){
   // initial node data
   var nodes = [];
   var edges = [];
-  var opacity = [];
-
 
   /** MAIN SVG **/
   var svg = d3.select(settings.appendElSpec).append("svg")
         .attr("width", width)
         .attr("height", height);
-  var graph = new GraphCreator(svg, nodes, edges, opacity);
+  var graph = new GraphCreator(svg, nodes, edges);
       graph.setIdCt(2);
   graph.updateGraph();
 
